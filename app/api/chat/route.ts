@@ -102,7 +102,8 @@ export async function POST(req: Request) {
     { role: "system", content:
       `You are Flow, a concise task assistant. Today is ${today}. Next 14 days: ${cal}. Use this table for relative dates. ` +
       `Use tools for all data and never invent ids (call list_tasks first when you need one). Only say something succeeded if a tool returned "OK". ` +
-      `If a tool returns Error, correct it or tell the user plainly. Reply in under 80 words.` },
+      `If a tool returns Error, correct it or tell the user plainly. Reply in under 80 words.` +
+      `STRICT RULE: Do not use HTML, LaTeX, Markdown, or any special formatting. Respond in plain text only.` },
     ...(Array.isArray(messages) ? messages.slice(-8) : []),
   ];
 
@@ -111,7 +112,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", temperature: 0.2, messages: msgs,
+        model: "qwen/qwen3.8-27b", temperature: 0.2, messages: msgs,
         ...(round < 2 ? { tools: TOOLS, tool_choice: "auto" } : {}), // final round: no tools, must answer
       }),
     });
