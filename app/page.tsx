@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
 
@@ -62,20 +62,28 @@ function Auth() {
 
 function Row({ t, td, onPatch, onDel }: { t: Task; td: string; onPatch: (id: string, p: Partial<Task>) => void; onDel: (id: string) => void }) {
   const late = !t.done && !!t.due_date && t.due_date < td;
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const grow = (el: HTMLTextAreaElement | null) => { if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } };
+  useLayoutEffect(() => { grow(taRef.current); }, [t.title]);
   return (
     <motion.div layout initial={{ opacity: 0, y: 14, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, x: 70, scale: 0.95 }} transition={spring}
       className={"row glass" + (t.done ? " done" : "") + (late ? " late" : "")}>
-      <button className={"chk" + (t.done ? " on" : "")} aria-label={t.done ? "Mark as open" : "Mark as done"} onClick={() => onPatch(t.id, { done: !t.done })}>
-        <svg viewBox="0 0 24 24"><motion.path d="M6 12.5l4 4 8-9" initial={false} animate={{ pathLength: t.done ? 1 : 0 }} transition={{ duration: 0.25 }} /></svg>
-      </button>
-      <input key={t.title ?? ""} className="ttl" defaultValue={t.title || ""} placeholder="Untitled" aria-label="Task title"
-        onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== t.title) onPatch(t.id, { title: v }); else e.target.value = t.title || ""; }}
-        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
-      <select className="pri" data-p={t.priority} value={t.priority} aria-label="Priority" onChange={(e) => onPatch(t.id, { priority: Number(e.target.value) })}>
-        {["Low", "Normal", "High", "Urgent"].map((l, i) => <option key={l} value={i}>{l}</option>)}
-      </select>
-      <input type="date" className="dt" aria-label="Due date" value={t.due_date || ""} onChange={(e) => onPatch(t.id, { due_date: e.target.value || null })} />
-      <button className="x" aria-label="Delete task" onClick={() => onDel(t.id)}>×</button>
+      <div className="row-top">
+        <button className={"chk" + (t.done ? " on" : "")} aria-label={t.done ? "Mark as open" : "Mark as done"} onClick={() => onPatch(t.id, { done: !t.done })}>
+          <svg viewBox="0 0 24 24"><motion.path d="M6 12.5l4 4 8-9" initial={false} animate={{ pathLength: t.done ? 1 : 0 }} transition={{ duration: 0.25 }} /></svg>
+        </button>
+        <textarea ref={taRef} key={t.title ?? ""} className="ttl" defaultValue={t.title || ""} placeholder="Untitled" aria-label="Task title" rows={1}
+          onInput={(e) => grow(e.currentTarget)}
+          onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== t.title) onPatch(t.id, { title: v }); else { e.target.value = t.title || ""; grow(e.target); } }}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }} />
+      </div>
+      <div className="row-meta">
+        <select className="pri" data-p={t.priority} value={t.priority} aria-label="Priority" onChange={(e) => onPatch(t.id, { priority: Number(e.target.value) })}>
+          {["Low", "Normal", "High", "Urgent"].map((l, i) => <option key={l} value={i}>{l}</option>)}
+        </select>
+        <input type="date" className="dt" aria-label="Due date" value={t.due_date || ""} onChange={(e) => onPatch(t.id, { due_date: e.target.value || null })} />
+        <button className="x" aria-label="Delete task" onClick={() => onDel(t.id)}>×</button>
+      </div>
     </motion.div>
   );
 }
