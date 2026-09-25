@@ -111,7 +111,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", temperature: 0.2, messages: msgs,
+        model: "qwen/qwen3.8-27b", temperature: 0.2, messages: msgs,
         ...(round < 2 ? { tools: TOOLS, tool_choice: "auto" } : {}), // final round: no tools, must answer
       }),
     });
